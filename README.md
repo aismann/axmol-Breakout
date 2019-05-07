@@ -1,6 +1,6 @@
-<!--<div align="center"><img width="100%" height="100%" style="margin:auto" src="Screenshot.png"></div>
+<div align="center"><img width="100%" height="100%" style="margin:auto" src="Screenshot.png"></div>
 <hr>
--->
+
 
 <img src="http://www.cocos2d-x.org/attachments/801/cocos2dx_portrait.png" width=200>
 

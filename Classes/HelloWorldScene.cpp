@@ -24,6 +24,7 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "HelloWorldScene.h"
+#include "GameoverScene.h"
 #define DRAG_BODYS_TAG 0x80
 #define BLOCK_BODYS_TAG 2
 #define BALL_BODY_TAG 1
@@ -104,7 +105,7 @@ bool HelloWorld::init()
 	touchListener->onTouchMoved = CC_CALLBACK_2(HelloWorld::onTouchMoved, this);
 	touchListener->onTouchEnded = CC_CALLBACK_2(HelloWorld::onTouchEnded, this);
 	touchListener->onTouchCancelled = CC_CALLBACK_2(HelloWorld::onTouchCancelled, this);
-	getEventDispatcher()->addEventListenerWithFixedPriority(touchListener, 11);
+	getEventDispatcher()->addEventListenerWithFixedPriority(touchListener, -128);
 
 
 	// contact listener
@@ -275,7 +276,9 @@ bool HelloWorld::onContactBegin(PhysicsContact& contact)
 	if (spriteA->getTag() == BALL_BODY_TAG && spriteB->getTag() == GROUND_BODY_TAG
 		|| spriteA->getTag() == GROUND_BODY_TAG && spriteB->getTag() == BALL_BODY_TAG)
 	{
-		CCLOG("GAME_OVER");
+		// YOU LOSE
+		Director::getInstance()->replaceScene(Gameover::createScene(false));
+		this->getEventDispatcher()->removeAllEventListeners();
 	}
 
 	if (spriteA->getTag() == BALL_BODY_TAG && spriteB->getTag() == BLOCK_BODYS_TAG)
@@ -304,8 +307,9 @@ bool HelloWorld::onContactBegin(PhysicsContact& contact)
 
 	if (!paddleFound)
 	{
-		CCLOG("YOU WON!!!!");
-		// replace scene
+		// YOU WON
+		Director::getInstance()->replaceScene(Gameover::createScene(true));
+		this->getEventDispatcher()->removeAllEventListeners();
 	}
 	return true;
 }
