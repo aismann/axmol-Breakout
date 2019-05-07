@@ -40,6 +40,15 @@ public:
     
     // implement the "static create()" method manually
     CREATE_FUNC(HelloWorld);
+	Size visibleSize;
+
+	void onEnter() override;
+	bool onTouchBegan(Touch* touch, Event* event);
+	void onTouchMoved(Touch* touch, Event* event);
+	void onTouchEnded(Touch* touch, Event* event);
+	void onTouchCancelled(Touch* touch, Event* event);
+	std::unordered_map<int, cocos2d::Node*> _mouses;
+	PhysicsWorld* _physicsWorld;
 };
 
 #endif // __HELLOWORLD_SCENE_H__

@@ -1,3 +1,4 @@
+
 /****************************************************************************
 Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
 
@@ -23,6 +24,7 @@ THE SOFTWARE.
 ****************************************************************************/
 
 #include "HelloWorldScene.h"
+#define DRAG_BODYS_TAG 0x80
 
 
 Scene* HelloWorld::createScene()
@@ -31,8 +33,9 @@ Scene* HelloWorld::createScene()
 	auto layer = HelloWorld::create();
 	scene->addChild(layer);
 	auto world = scene->getPhysicsWorld();
-	auto gravity = Vec2(0, -256.0f);
+	auto gravity = Vec2(0.0f,0.0f);
 	world->setGravity(gravity);
+	// world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
 	return scene;
 }
 
@@ -53,7 +56,7 @@ bool HelloWorld::init()
 		return false;
 	}
 
-	auto visibleSize = Director::getInstance()->getVisibleSize();
+	visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
 
 	/////////////////////////////
@@ -89,25 +92,21 @@ bool HelloWorld::init()
 
 	// edge box (walls)
 	auto ebNode = Node::create();
-	auto ebBody = PhysicsBody::createEdgeBox(visibleSize,
-		PhysicsMaterial(0.1f, 1.0f, 0.0));
+	auto ebBody = PhysicsBody::createEdgeBox(visibleSize);
 	ebNode->setPhysicsBody(ebBody);
 	ebNode->setPosition(visibleSize / 2);
 	this->addChild(ebNode);
 
-	// ball
-	auto ball = Sprite::create("ball.png");
-	ball->setPosition(Vec2(visibleSize.width / 2,
-		visibleSize.height * 0.7f));
-	float radius = ball->getContentSize().width / 2;
-	auto ballBody = PhysicsBody::createCircle(radius);
-	ballBody->setDynamic(true);
-	ball->setPhysicsBody(ballBody);
-	this->addChild(ball);
+	// touch listener
+	auto touchListener = EventListenerTouchOneByOne::create();
+	touchListener->onTouchBegan = CC_CALLBACK_2(HelloWorld::onTouchBegan, this);
+	touchListener->onTouchMoved = CC_CALLBACK_2(HelloWorld::onTouchMoved, this);
+	touchListener->onTouchEnded = CC_CALLBACK_2(HelloWorld::onTouchEnded, this);
+	touchListener->onTouchCancelled = CC_CALLBACK_2(HelloWorld::onTouchCancelled, this);
+	getEventDispatcher()->addEventListenerWithFixedPriority(touchListener, 11);
 
 	return true;
 }
-
 
 void HelloWorld::menuCloseCallback(Ref* pSender)
 {
@@ -118,6 +117,118 @@ void HelloWorld::menuCloseCallback(Ref* pSender)
 
 	//EventCustom customEndEvent("game_scene_close_event");
 	//_eventDispatcher->dispatchEvent(&customEndEvent);
-
-
 }
+
+void HelloWorld::onEnter()
+{
+	Scene::onEnter();
+
+	_physicsWorld = Director::getInstance()->getRunningScene()->getPhysicsWorld();
+
+	// ball
+	auto ball = Sprite::create("ball.png");
+	ball->setPosition(Vec2(300,100));
+	float radius = ball->getContentSize().width / 2;
+	auto ballBody = PhysicsBody::createCircle(radius,
+		PhysicsMaterial(0.0f,1.0f,0.0f));
+	ballBody->setDynamic(true);
+	ball->setPhysicsBody(ballBody);
+
+	// paddle
+	auto paddle = Sprite::create("paddle.png");
+	paddle->setPosition(Vec2(visibleSize.width / 2, 50));
+	auto paddleBody = PhysicsBody::createBox(paddle->getContentSize(),
+		PhysicsMaterial(10.0f, 0.1f, 0.4f));
+	paddleBody->setDynamic(true);
+	paddle->setPhysicsBody(paddleBody);
+	paddleBody->setTag(DRAG_BODYS_TAG);
+	paddleBody->setRotationEnable(false);
+	
+	// Restrict paddle along x axes
+	auto ground = Sprite::create();
+	ground->setPosition(0, 0);
+	auto groundBody = PhysicsBody::create();
+	groundBody->setDynamic(false);
+	ground->setPhysicsBody(groundBody);
+	auto joint = PhysicsJointGroove::construct(
+		paddle->getPhysicsBody(),
+		ground->getPhysicsBody(),
+		Vec2(-visibleSize.width/2, 0),
+		Vec2(visibleSize.width/2, 0),
+		Vec2(visibleSize.width/2, paddle->getPositionY())
+		);
+	_physicsWorld->addJoint(joint);
+
+	Vec2 force = Vec2(300, 300);
+	ballBody->applyImpulse(force);
+	
+	this->addChild(ground);
+	this->addChild(ball);
+	this->addChild(paddle);
+}
+
+bool HelloWorld::onTouchBegan(Touch* touch, Event* event)
+{
+	auto location = touch->getLocation();
+	auto arr = _physicsWorld->getShapes(location);
+
+	PhysicsBody* body = nullptr;
+	for (auto& obj : arr)
+	{
+		if ((obj->getBody()->getTag() & DRAG_BODYS_TAG) != 0)
+		{
+			body = obj->getBody();
+			break;
+		}
+	}
+
+	if (body != nullptr)
+	{
+		Node* mouse = Node::create();
+		auto physicsBody = PhysicsBody::create(PHYSICS_INFINITY, PHYSICS_INFINITY);
+		physicsBody->setDynamic(false);
+		mouse->addComponent(physicsBody);
+		mouse->setPosition(location);
+		this->addChild(mouse);
+		PhysicsJointPin* joint = PhysicsJointPin::construct(physicsBody, body, location);
+		joint->setMaxForce(5000.0f * body->getMass());
+		_physicsWorld->addJoint(joint);
+		_mouses.insert(std::make_pair(touch->getID(), mouse));
+		return true;
+	}
+
+	return false;
+}
+
+void HelloWorld::onTouchMoved(Touch* touch, Event* event)
+{
+	auto it = _mouses.find(touch->getID());
+
+	if (it != _mouses.end())
+	{
+		it->second->setPosition(touch->getLocation());
+	}
+}
+
+void HelloWorld::onTouchEnded(Touch* touch, Event* event)
+{
+	auto it = _mouses.find(touch->getID());
+
+	if (it != _mouses.end())
+	{
+		this->removeChild(it->second);
+		_mouses.erase(it);
+	}
+}
+
+void HelloWorld::onTouchCancelled(Touch* touch, Event* event)
+{
+	auto it = _mouses.find(touch->getID());
+
+	if (it != _mouses.end())
+	{
+		this->removeChild(it->second);
+		_mouses.erase(it);
+	}
+}
+
