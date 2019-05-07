@@ -165,6 +165,22 @@ void HelloWorld::onEnter()
 	this->addChild(ground);
 	this->addChild(ball);
 	this->addChild(paddle);
+
+	// Adding blcoks
+	for (size_t i = 0; i < 4; i++)
+	{
+		static int padding = 20;
+		auto block = Sprite::create("block.png");
+		int xOffset = padding +
+			block->getContentSize().width / 2 + 
+			(block->getContentSize().width + padding)*i;
+		block->setPosition(xOffset, 250);
+		block->setTag(2);
+		auto blockBody = PhysicsBody::createBox(block->getContentSize(),
+			PhysicsMaterial(10.0f, 0.1, 0.4f));
+		block->setPhysicsBody(blockBody);
+		this->addChild(block);
+	}
 }
 
 bool HelloWorld::onTouchBegan(Touch* touch, Event* event)
