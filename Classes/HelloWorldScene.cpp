@@ -25,6 +25,9 @@ THE SOFTWARE.
 
 #include "HelloWorldScene.h"
 #define DRAG_BODYS_TAG 0x80
+#define BLOCK_BODYS_TAG 2
+#define BALL_BODY_TAG 1
+#define GROUND_BODY_TAG 3
 
 
 Scene* HelloWorld::createScene()
@@ -35,7 +38,6 @@ Scene* HelloWorld::createScene()
 	auto world = scene->getPhysicsWorld();
 	auto gravity = Vec2(0.0f,0.0f);
 	world->setGravity(gravity);
-	// world->setDebugDrawMask(PhysicsWorld::DEBUGDRAW_ALL);
 	return scene;
 }
 
@@ -55,10 +57,9 @@ bool HelloWorld::init()
 	{
 		return false;
 	}
-
 	visibleSize = Director::getInstance()->getVisibleSize();
 	Vec2 origin = Director::getInstance()->getVisibleOrigin();
-
+	paddles = 0;
 	/////////////////////////////
 	// 2. add a menu item with "X" image, which is clicked to quit the program
 	//    you may modify it.
@@ -105,6 +106,14 @@ bool HelloWorld::init()
 	touchListener->onTouchCancelled = CC_CALLBACK_2(HelloWorld::onTouchCancelled, this);
 	getEventDispatcher()->addEventListenerWithFixedPriority(touchListener, 11);
 
+
+	// contact listener
+	auto contactListener = EventListenerPhysicsContact::create();
+	contactListener->onContactBegin = CC_CALLBACK_1(HelloWorld::onContactBegin, this);
+	getEventDispatcher()->addEventListenerWithSceneGraphPriority(contactListener, this);
+
+	this->scheduleUpdate();
+
 	return true;
 }
 
@@ -129,10 +138,12 @@ void HelloWorld::onEnter()
 	auto ball = Sprite::create("ball.png");
 	ball->setPosition(Vec2(300,100));
 	float radius = ball->getContentSize().width / 2;
-	auto ballBody = PhysicsBody::createCircle(radius,
+	ballBody = PhysicsBody::createCircle(radius,
 		PhysicsMaterial(0.0f,1.0f,0.0f));
 	ballBody->setDynamic(true);
+	ballBody->setContactTestBitmask(true);
 	ball->setPhysicsBody(ballBody);
+	ball->setTag(BALL_BODY_TAG);
 
 	// paddle
 	auto paddle = Sprite::create("paddle.png");
@@ -147,8 +158,10 @@ void HelloWorld::onEnter()
 	// Restrict paddle along x axes
 	auto ground = Sprite::create();
 	ground->setPosition(0, 0);
-	auto groundBody = PhysicsBody::create();
+	auto groundBody = PhysicsBody::createEdgeSegment(Vec2(0,0),Vec2(visibleSize.width,0));
 	groundBody->setDynamic(false);
+	ground->setTag(GROUND_BODY_TAG);
+	groundBody->setContactTestBitmask(true);
 	ground->setPhysicsBody(groundBody);
 	auto joint = PhysicsJointGroove::construct(
 		paddle->getPhysicsBody(),
@@ -175,11 +188,13 @@ void HelloWorld::onEnter()
 			block->getContentSize().width / 2 + 
 			(block->getContentSize().width + padding)*i;
 		block->setPosition(xOffset, 250);
-		block->setTag(2);
+		block->setTag(BLOCK_BODYS_TAG);
 		auto blockBody = PhysicsBody::createBox(block->getContentSize(),
 			PhysicsMaterial(10.0f, 0.1, 0.4f));
+		blockBody->setContactTestBitmask(true);
 		block->setPhysicsBody(blockBody);
 		this->addChild(block);
+		paddles++;
 	}
 }
 
@@ -246,5 +261,61 @@ void HelloWorld::onTouchCancelled(Touch* touch, Event* event)
 		this->removeChild(it->second);
 		_mouses.erase(it);
 	}
+}
+
+bool HelloWorld::onContactBegin(PhysicsContact& contact)
+{
+	bool paddleFound = false;
+	Vector<Node*> toDestroy;
+	auto shapeA = contact.getShapeA();
+	auto bodyA = shapeA->getBody();
+	auto spriteA = bodyA->getNode();
+	auto bodyB = contact.getShapeB()->getBody();
+	auto spriteB = bodyB->getNode();
+	if (spriteA->getTag() == BALL_BODY_TAG && spriteB->getTag() == GROUND_BODY_TAG
+		|| spriteA->getTag() == GROUND_BODY_TAG && spriteB->getTag() == BALL_BODY_TAG)
+	{
+		CCLOG("GAME_OVER");
+	}
+
+	if (spriteA->getTag() == BALL_BODY_TAG && spriteB->getTag() == BLOCK_BODYS_TAG)
+	{
+		if (find(toDestroy.begin(), toDestroy.end(), spriteB) == toDestroy.end())
+			toDestroy.pushBack(spriteB);
+
+	}else if(spriteA->getTag() == BLOCK_BODYS_TAG && spriteB->getTag() == BALL_BODY_TAG)
+	{
+		if (find(toDestroy.begin(), toDestroy.end(), spriteA) == toDestroy.end())
+			toDestroy.pushBack(spriteA);
+	}
+
+	Vector<Node*>::iterator pos;
+	for (pos = toDestroy.begin(); pos != toDestroy.end(); pos++)
+	{
+		auto sprite = *pos;
+		auto body = sprite->getPhysicsBody();
+		this->removeChild(sprite, true);
+		_physicsWorld->removeBody(body);
+		paddles--;
+	}
+
+	if (paddles > 0)
+			paddleFound = true;
+
+	if (!paddleFound)
+	{
+		CCLOG("YOU WON!!!!");
+		// replace scene
+	}
+	return true;
+}
+
+void HelloWorld::update(float delta)
+{
+	 if (ballBody->getVelocity().length()<=100)
+	 {
+	 	Vec2 force = Vec2(300, 300);
+	 	ballBody->applyImpulse(force);
+	 }
 }
 

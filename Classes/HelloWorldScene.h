@@ -49,6 +49,10 @@ public:
 	void onTouchCancelled(Touch* touch, Event* event);
 	std::unordered_map<int, cocos2d::Node*> _mouses;
 	PhysicsWorld* _physicsWorld;
+	bool onContactBegin(PhysicsContact& contact);
+	int paddles;
+	void update(float delta) override;
+	PhysicsBody* ballBody;
 };
 
 #endif // __HELLOWORLD_SCENE_H__
