@@ -1,9 +1,9 @@
-cocos2d
 proj.android
 proj.ios_mac
 proj.linux
 proj.win32
+proj.wasm
+proj.winrt
 .cocos-project.json
 CMakeLists.txt
-Classes/S.h
-Classes/S.cpp
+build_x64

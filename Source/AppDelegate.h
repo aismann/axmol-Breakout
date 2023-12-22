@@ -1,18 +1,19 @@
 /****************************************************************************
  Copyright (c) 2017-2018 Xiamen Yaji Software Co., Ltd.
- 
- http://www.cocos2d-x.org
- 
+ Copyright (c) 2019-present Axmol Engine contributors (see AUTHORS.md).
+
+ https://axmolengine.github.io/
+
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
  copies of the Software, and to permit persons to whom the Software is
  furnished to do so, subject to the following conditions:
- 
+
  The above copyright notice and this permission notice shall be included in
  all copies or substantial portions of the Software.
- 
+
  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -22,37 +23,44 @@
  THE SOFTWARE.
  ****************************************************************************/
 
-#ifndef __HELLOWORLD_SCENE_H__
-#define __HELLOWORLD_SCENE_H__
+#ifndef _APP_DELEGATE_H_
+#define _APP_DELEGATE_H_
 
-#include "cocos2d.h"
-USING_NS_CC;
+#include "axmol.h"
 
-class HelloWorld : public cocos2d::Scene
+
+
+/**
+@brief    The axmol Application.
+
+Private inheritance here hides part of interface from Director.
+*/
+class AppDelegate : private ax::Application
 {
 public:
-    static cocos2d::Scene* createScene();
+    AppDelegate();
+    virtual ~AppDelegate();
 
-    virtual bool init();
-    
-    // a selector callback
-    void menuCloseCallback(cocos2d::Ref* pSender);
-    
-    // implement the "static create()" method manually
-    CREATE_FUNC(HelloWorld);
-	Size visibleSize;
+    void initGLContextAttrs() override;
 
-	void onEnter() override;
-	bool onTouchBegan(Touch* touch, Event* event);
-	void onTouchMoved(Touch* touch, Event* event);
-	void onTouchEnded(Touch* touch, Event* event);
-	void onTouchCancelled(Touch* touch, Event* event);
-	std::unordered_map<int, cocos2d::Node*> _mouses;
-	PhysicsWorld* _physicsWorld;
-	bool onContactBegin(PhysicsContact& contact);
-	int paddles;
-	void update(float delta) override;
-	PhysicsBody* ballBody;
+    /**
+    @brief    Implement Director and Scene init code here.
+    @return true    Initialize success, app continue.
+    @return false   Initialize failed, app terminate.
+    */
+    bool applicationDidFinishLaunching() override;
+
+    /**
+    @brief  Called when the application moves to the background
+    @param  the pointer of the application
+    */
+    void applicationDidEnterBackground() override;
+
+    /**
+    @brief  Called when the application reenters the foreground
+    @param  the pointer of the application
+    */
+    void applicationWillEnterForeground() override;
 };
 
-#endif // __HELLOWORLD_SCENE_H__
+#endif  // _APP_DELEGATE_H_

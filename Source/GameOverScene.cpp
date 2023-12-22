@@ -1,24 +1,27 @@
-#include "GameoverScene.h"
-#include "HelloWorldScene.h"
+#include "GameOverScene.h"
+#include "MainScene.h"
 
-Scene* Gameover::createScene(bool win)
+
+USING_NS_AX;
+
+Scene* GameOver::createScene(bool win)
 {
-    return Gameover::create(win);
+    return GameOver::create(win);
 }
 
-Gameover* Gameover::create(bool win)
+GameOver* GameOver::create(bool win)
 {
-	auto *ret = new (std::nothrow) Gameover();
+	auto *ret = new (std::nothrow) GameOver();
 	if (ret && ret->init(win))
 	{
 		ret->autorelease();
 		return ret;
 	}
-	CC_SAFE_DELETE(ret);
+	AX_SAFE_DELETE(ret);
 	return nullptr;
 }
 
-bool Gameover::init(bool win)
+bool GameOver::init(bool win)
 {
     //////////////////////////////
     // 1. super init first
@@ -35,7 +38,7 @@ bool Gameover::init(bool win)
 	this->runAction(Sequence::create(
 		DelayTime::create(2.0f),
 		CallFunc::create([]{
-			Director::getInstance()->replaceScene(HelloWorld::createScene());
+			Director::getInstance()->replaceScene(MainScene::createScene());
 		})
 		, NULL));
     return true;
