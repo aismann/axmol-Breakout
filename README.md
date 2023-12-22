@@ -5,6 +5,7 @@ Original source from: https://github.com/HTC77/cocos2d-x-Breakout
 
 Documentations and samples (cocos2d-x)
 -------------
+* [Chipmunk2D Manual]https://chipmunk-physics.net/release/ChipmunkLatest-Docs/)
 * [All Docs in a single place!](http://cocos2d-x.org/docs/)
 * [Online API Reference](http://cocos2d-x.org/docs/api-ref/index.html) _Note that Cocos2d-x, Cocos2d-JS and Cocos Creator have different API set_
 * [Programmers Guide](http://cocos2d-x.org/docs/programmers-guide/2/index.html)
