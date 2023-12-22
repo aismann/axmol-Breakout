@@ -1,3 +1,5 @@
+Original source from: https://github.com/HTC77/cocos2d-x-Breakout
+
 <div align="center"><img width="100%" height="100%" style="margin:auto" src="Screenshot.png"></div>
 <hr>
 
