@@ -83,6 +83,8 @@ public:
 
 	int paddles;
 	ax::PhysicsBody* ballBody;
+	ax::PhysicsBody* mouseBody;
+	ax::Node* mouse;
 
 private:
     GameState _gameState = GameState::init;

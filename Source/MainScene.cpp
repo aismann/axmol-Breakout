@@ -27,9 +27,10 @@
 #include "GameOverScene.h"
 
 #define DRAG_BODYS_TAG 0x80
-#define BLOCK_BODYS_TAG 2
 #define BALL_BODY_TAG 1
+#define BLOCK_BODYS_TAG 2
 #define GROUND_BODY_TAG 3
+//#define PADDLE_BODY_TAG 4
 
 USING_NS_AX;
 
@@ -64,7 +65,7 @@ void MainScene::onEnter()
 	ball->setPosition(Vec2(300, 100));
 	float radius = ball->getContentSize().width / 2;
 	ballBody = PhysicsBody::createCircle(radius,
-		PhysicsMaterial(0.0f, 1.0f, 0.0f));
+		PhysicsMaterial(1.0f, 1.0f, 0.0f));
 	ballBody->setDynamic(true);
 	ballBody->setContactTestBitmask(true);
 	ball->setPhysicsBody(ballBody);
@@ -98,8 +99,8 @@ void MainScene::onEnter()
 		Vec2(visibleSize.width / 2, 0),
 		Vec2(visibleSize.width / 2, paddle->getPositionY())
 	);
-	_physicsWorld->addJoint(joint);
-	//getPhysicsWorld()->addJoint(joint);
+//	_physicsWorld->addJoint(joint);
+	getPhysicsWorld()->addJoint(joint);
 
 	Vec2 force = Vec2(300, 300);
 	ballBody->applyImpulse(force);
@@ -124,12 +125,21 @@ void MainScene::onEnter()
 			auto blockBody = PhysicsBody::createBox(block->getContentSize(),
 				PhysicsMaterial(10.0f, 0.1, 0.4f));
 			blockBody->setContactTestBitmask(true);
+			blockBody->setDynamic(false);
 			block->setPhysicsBody(blockBody);
 			//	block->addComponent(blockBody);
 			this->addChild(block);
 			paddles++;
 		}
 	}
+
+	mouse = Node::create();
+	mouseBody = PhysicsBody::create(PHYSICS_INFINITY, PHYSICS_INFINITY);
+	mouseBody->setDynamic(false);
+	mouse->setPhysicsBody(mouseBody);
+	//mouse->setPosition(paddle->getPosition());
+	this->addChild(mouse);
+
 }
 
 
@@ -179,8 +189,8 @@ bool MainScene::init()
   // edge box (walls)
 	auto ebNode = Node::create();
 	auto ebBody = PhysicsBody::createEdgeBox(visibleSize);
-	ebNode->setPhysicsBody(ebBody);
-	//ebNode->addComponent(ebBody);
+	//ebNode->setPhysicsBody(ebBody);
+	ebNode->addComponent(ebBody);
 	ebNode->setPosition(visibleSize / 2);
 	this->addChild(ebNode);
 
@@ -222,7 +232,7 @@ bool MainScene::onTouchBegan(Touch* touch, Event* event)
 	auto arr = _physicsWorld->getShapes(location);
 
 	PhysicsBody* body = nullptr;
-	for (auto& obj : arr)
+	for (auto&& obj : arr)
 	{
 		if ((obj->getBody()->getTag() & DRAG_BODYS_TAG) != 0)
 		{
@@ -233,13 +243,13 @@ bool MainScene::onTouchBegan(Touch* touch, Event* event)
 
 	if (body != nullptr)
 	{
-		Node* mouse = Node::create();
-		auto physicsBody = PhysicsBody::create(PHYSICS_INFINITY, PHYSICS_INFINITY);
-		physicsBody->setDynamic(false);
-		mouse->addComponent(physicsBody);
+		//Node* mouse = Node::create();
+		//auto physicsBody = PhysicsBody::create(PHYSICS_INFINITY, PHYSICS_INFINITY);
+		//physicsBody->setDynamic(false);
+		//mouse->addComponent(physicsBody);
 		mouse->setPosition(location);
-		this->addChild(mouse);
-		PhysicsJointPin* joint = PhysicsJointPin::construct(physicsBody, body, location);
+		//this->addChild(mouse);
+		PhysicsJointPin* joint = PhysicsJointPin::construct(mouseBody, body, location);
 		joint->setMaxForce(5000.0f * body->getMass());
 		_physicsWorld->addJoint(joint);
 		_mouses.insert(std::make_pair(touch->getID(), mouse));
@@ -338,8 +348,8 @@ void MainScene::update(float delta)
 		AXLOG("ballBody->getVelocity().length():  %f", ballBody->getVelocity().length());
 		if (ballBody->getVelocity().length() <= 100)
 		{
-			Vec2 force = Vec2(300, 300);
-			ballBody->applyImpulse(force);
+			//Vec2 force = Vec2(300, 300);
+			//ballBody->applyImpulse(force);
 		}
 		break;
 	}
@@ -414,14 +424,26 @@ bool MainScene::onContactBegin(PhysicsContact& contact)
 
 	if (spriteA->getTag() == BALL_BODY_TAG && spriteB->getTag() == BLOCK_BODYS_TAG)
 	{
+		//Vec2 force = Vec2(3000, 3000);
+		//bodyA->applyImpulse(force);
 		if (find(toDestroy.begin(), toDestroy.end(), spriteB) == toDestroy.end())
 			toDestroy.pushBack(spriteB);
 
 	}
 	else if (spriteA->getTag() == BLOCK_BODYS_TAG && spriteB->getTag() == BALL_BODY_TAG)
 	{
+		//Vec2 force = Vec2(300, 300);
+		//bodyB->applyImpulse(force);
 		if (find(toDestroy.begin(), toDestroy.end(), spriteA) == toDestroy.end())
 			toDestroy.pushBack(spriteA);
+	}
+	else if (spriteA->getTag() == BALL_BODY_TAG && spriteB->getTag() == DRAG_BODYS_TAG)
+	{
+
+		Vec2 force = Vec2(300, 300);
+		bodyA->applyImpulse(force);
+	/*	if (find(toDestroy.begin(), toDestroy.end(), spriteA) == toDestroy.end())
+			toDestroy.pushBack(spriteA);*/
 	}
 
 	Vector<Node*>::iterator pos;
